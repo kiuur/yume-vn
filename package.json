@@ -1,10 +1,10 @@
 {
     "name": "kyuurzy",
     "type": "module",
-    "main": "index.mjs",
+    "main": "yume.mjs",
     "scripts": {
-        "start": "node index.mjs",
-        "dev": "node --watch index.mjs"
+        "start": "node yume.mjs",
+        "dev": "node --watch yume.mjs"
     },
     "author": "kyuurzy",
     "license": "ISC",
