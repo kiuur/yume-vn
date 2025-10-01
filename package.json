@@ -12,7 +12,7 @@
         "@whiskeysockets/baileys": "npm:@stvnnvs/baileys",
         "@hapi/boom": "^10.0.1",
         "axios": "^1.6.2",
-        "fluent-ffmpeg": "^2.1.2"
+        "fluent-ffmpeg": "^2.1.2",
         "pino": "^8.11.0"
     }
 }
