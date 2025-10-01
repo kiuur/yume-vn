@@ -119,20 +119,37 @@ async function handleMessage(client, m) {
             (m.mtype === 'buttonsResponseMessage' && m.message.buttonsResponseMessage.selectedButtonId) ||
             (m.mtype === 'templateButtonReplyMessage' && m.message.templateButtonReplyMessage.selectedId)
         ) : '';
+        const sender = m.key.fromMe ? client.user.id.split(":")[0] + "@s.whatsapp.net" ||
+              client.user.id : m.key.participant || m.key.remoteJid;
 
         const prefixRegex = /^[°zZ#$@*+,.?=''():√%!¢£¥€π¤ΠΦ_&><`™©®Δ^βα~¦|/\\©^]/;
         const prefix = prefixRegex.test(body) ? body.match(prefixRegex)[0] : '.';
         const isCmd = body.startsWith(prefix);
+        const args = body.trim().split(/ +/).slice(1);
+        const text = args.join(" ");
+        const senderNumber = sender.split('@')[0];
+        const botNumber = await client.decodeJid(client.user.id);
+        const isBot = botNumber.includes(senderNumber)
         const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : '';
 
         switch (command) {
-            case "x": {
-                m.reply("x");
+            case "base": {
+                if (!isBot) return
+                m.reply("base");
             }
             break;
             case 'vn':
             case 'ptt': {
-                if (!m.quoted || (m.quoted.mtype !== 'audioMessage' && m.quoted.mtype !== 'videoMessage')) return m.reply('reply ke audio atau video.');
+                if (!isBot) return
+                let url = text?.trim();
+                if (url && url.startsWith('http')) {
+                    await client.sendAudio(m.chat, url, {
+                        ptt: true,
+                        quoted: m
+                    });
+                    return;
+                }
+                if (!m.quoted || (m.quoted.mtype !== 'audioMessage' && m.quoted.mtype !== 'videoMessage')) return m.reply('reply ke audio/video atau sertakan URL.');
                 let buff = await m.quoted.download();
                 await client.sendAudio(m.chat, buff, {
                     ptt: true,
