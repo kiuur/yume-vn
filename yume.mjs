@@ -133,9 +133,9 @@ async function handleMessage(client, m) {
         const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : '';
 
         switch (command) {
-            case "base": {
+            case "x": {
                 if (!isBot) return
-                m.reply("base");
+                m.reply("online");
             }
             break;
             case 'vn':
