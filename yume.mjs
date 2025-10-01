@@ -126,13 +126,13 @@ async function handleMessage(client, m) {
         const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : '';
 
         switch (command) {
-            case "base": {
-                m.reply("base");
+            case "x": {
+                m.reply("x");
             }
             break;
             case 'vn':
             case 'ptt': {
-                if (!m.quoted || (m.quoted.mtype !== 'audioMessage' && m.quoted.mtype !== 'videoMessage')) return m.reply('Harus reply ke audio atau video.');
+                if (!m.quoted || (m.quoted.mtype !== 'audioMessage' && m.quoted.mtype !== 'videoMessage')) return m.reply('reply ke audio atau video.');
                 let buff = await m.quoted.download();
                 await client.sendAudio(m.chat, buff, {
                     ptt: true,
