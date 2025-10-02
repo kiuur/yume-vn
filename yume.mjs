@@ -1,3 +1,7 @@
+
+// © 2025 KyuuRzy. All Rights Reserved.
+// respect the work, don’t just copy-paste.
+
 import baileys from "@whiskeysockets/baileys";
 const {
     default: makeWASocket,
@@ -17,8 +21,13 @@ import axios from "axios";
 import ffmpeg from "fluent-ffmpeg";
 import { PassThrough } from "stream";
 import fs from "fs";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 const ff = ffmpeg;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const question = (text) => {
     const rl = readline.createInterface({
@@ -133,9 +142,9 @@ async function handleMessage(client, m) {
         const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : '';
 
         switch (command) {
-            case "x": {
+            case "base": {
                 if (!isBot) return
-                m.reply("online");
+                m.reply("base");
             }
             break;
             case 'vn':
@@ -157,6 +166,15 @@ async function handleMessage(client, m) {
                 });
             }
             break;
+            case "mesinfo": {
+                if (!isBot) return 
+                if (!m.quoted) return m.reply(`reply pesan dengan caption ${prefix + command}`);
+             
+                const type = m.quoted.mtype;
+                const id = m.quoted.id;
+                m.reply(`Pesan yang di-reply memiliki:\n- Tipe pesan: *${type}*\n- ID pesan: *${id}*`);
+            }
+            break;
         }
     } catch (err) {
         console.log(err);
@@ -171,19 +189,45 @@ async function startBase() {
     
     const client = makeWASocket({
         printQRInTerminal: false,
-        browser: ["Windows", "Edge", ""],
-        logger: pino({ level: "fatal" }),
+        browser: ["Ubuntu", "Chrome", "20.0.00"],
+        logger: pino({ level: "silent" }),
         auth: state
     });
     
     if(!client.authState.creds.registered) {
         console.log("masukkan nomor:\nex: 628xxx");
         const phoneNumber = await question("phone: ");
-        const code = await client.requestPairingCode(phoneNumber);
+        const code = await client.requestPairingCode(phoneNumber, "12345678");
         console.log(`pairing code: ${code}`);
     }
     
     client.ev.on("creds.update", saveCreds);
+	client.ev.on('messages.upsert', async chatUpdate => {
+		try {
+			let msg = chatUpdate.messages[0];
+			if (!msg.message) return;
+            msg.message =
+                Object.keys(msg.message)[0] === 'ephemeralMessage' ?
+                msg.message.ephemeralMessage.message : msg.message 
+			if (true && msg.key && msg.key.remoteJid === 'status@broadcast') {
+				let emoji = ['🤍', '💫'];
+				let sigma = emoji[Math.floor(Math.random() * emoji.length)];
+				await client.readMessages([msg.key]);
+				client.sendMessage('status@broadcast', { 
+					react: { 
+						text: sigma, 
+                        key: msg.key 
+                    }
+				}, { statusJidList: [msg.key.participant] })}
+			if (!client.public && !msg.key.fromMe && chatUpdate.type === 'notify') return;
+            if (msg.key.id.startsWith('BAE5') && msg.key.id.length === 16) return;
+            let m = smsg(client, msg, store);
+            await handleMessage(client, m, chatUpdate, store);
+        } catch (err) {
+            console.log(err);
+        }
+    });
+    
     store.bind(client.ev);
     client.public = true;
 
@@ -330,21 +374,38 @@ async function startBase() {
             console.log('berhasil tersambung');
         }
     });
-  
-    client.ev.on('messages.upsert', async chatUpdate => {
-        try {
-            let msg = chatUpdate.messages[0];
-            if (!msg.message) return;
-            msg.message = (Object.keys(msg.message)[0] === 'ephemeralMessage') ? msg.message.ephemeralMessage.message : msg.message;
-            if (msg.key && msg.key.remoteJid === 'status@broadcast') return;
-            if (!client.public && !msg.key.fromMe && chatUpdate.type === 'notify') return;
-            if (msg.key.id.startsWith('BAE5') && msg.key.id.length === 16) return;
-            let m = smsg(client, msg, store);
-            await handleMessage(client, m, chatUpdate, store);
-        } catch (err) {
-            console.log(err);
-        }
-    });
 }
 
 startBase();
+
+const ignoredErrors = [
+    'Socket connection timeout',
+    'EKEYTYPE',
+    'item-not-found',
+    'rate-overlimit',
+    'Connection Closed',
+    'Timed Out',
+    'Value not found'
+]
+
+const file = fileURLToPath(import.meta.url)
+fs.watchFile(file, () => {
+    console.log("file changed, please restart manually")
+})
+
+process.on('unhandledRejection', reason => {
+    if (ignoredErrors.some(e => String(reason).includes(e))) return
+    console.log('Unhandled Rejection:', reason)
+})
+
+const originalConsoleError = console.error
+console.error = function (msg, ...args) {
+    if (typeof msg === 'string' && ignoredErrors.some(e => msg.includes(e))) return
+    originalConsoleError.apply(console, [msg, ...args])
+}
+
+const originalStderrWrite = process.stderr.write
+process.stderr.write = function (msg, encoding, fd) {
+    if (typeof msg === 'string' && ignoredErrors.some(e => msg.includes(e))) return
+    originalStderrWrite.apply(process.stderr, arguments)
+}
