@@ -201,6 +201,7 @@ async function startBase() {
         console.log(`pairing code: ${code}`);
     }
     
+    store.bind(client.ev);
     client.ev.on("creds.update", saveCreds);
 	client.ev.on('messages.upsert', async chatUpdate => {
 		try {
@@ -208,17 +209,8 @@ async function startBase() {
 			if (!msg.message) return;
             msg.message =
                 Object.keys(msg.message)[0] === 'ephemeralMessage' ?
-                msg.message.ephemeralMessage.message : msg.message 
-			if (true && msg.key && msg.key.remoteJid === 'status@broadcast') {
-				let emoji = ['🤍', '💫'];
-				let sigma = emoji[Math.floor(Math.random() * emoji.length)];
-				await client.readMessages([msg.key]);
-				client.sendMessage('status@broadcast', { 
-					react: { 
-						text: sigma, 
-                        key: msg.key 
-                    }
-				}, { statusJidList: [msg.key.participant] })}
+                msg.message.ephemeralMessage.message : msg.message
+            if (msg.key && msg.key.remoteJid === 'status@broadcast') return
 			if (!client.public && !msg.key.fromMe && chatUpdate.type === 'notify') return;
             if (msg.key.id.startsWith('BAE5') && msg.key.id.length === 16) return;
             let m = smsg(client, msg, store);
@@ -228,8 +220,7 @@ async function startBase() {
         }
     });
     
-    store.bind(client.ev);
-    client.public = true;
+    client.public = false;
 
     client.decodeJid = (jid) => {
         if (!jid) return jid;
